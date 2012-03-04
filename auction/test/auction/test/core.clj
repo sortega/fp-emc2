@@ -10,23 +10,18 @@
            (take 5 (product-seq 0 0 7 5 3 5 2 4)))))
 
 (deftest partial-ordering
-  (testing "Partial order relations"
-    (is (= true  (plt [0  0] [1 -1])))
-    (is (= true  (plt [0  0] [0 -1])))
-    (is (= true  (plt [0  0] [1  0])))
-    (is (= false (plt [0  0] [0  0])))
-    (is (= false (pgt [0  0] [1 -1])))
-    (is (= false (pgt [0  0] [0 -1])))
-    (is (= false (pgt [0  0] [1  0])))
-    (is (= true  (pgt [1 -1] [0  0]))))
-  (testing "Preferred accumulation"
-    (is (= [[0 0]] (pmin [] [0 0])))         
-    (is (= #{[0 0] [0 1]} (set (pmin [[0 1]] [0 0]))))
-    (is (= #{[-1 -1]} (set (pmin [[0 1]] [-1 -1]))))
-    (is (= #{[0 0] [1 0] [4 0]}
-           (set (reduce pmin [] [[0 0] [2 3] [1 1] [1 0] [4 0] [1 2]]))))
-    (is (= #{[2 3] [4 0]}
-           (set (reduce pmax [] [[0 0] [2 3] [1 1] [1 0] [4 0] [1 2]]))))))
+  (testing "vector ordering"
+    (is (= true  (better? [0 1] [1 2])))
+    (is (= true  (better? [0 1] [1 1])))
+    (is (= true  (better? [0 1] [0 2])))
+    (is (= false (better? [0 1] [0 1])))
+    (is (= false (better? [0 1] [0 0]))))
+  (testing "preferred accumulation"
+    (is (= [[0 0]]       (bests [] [0 0])))         
+    (is (= [[0 0] [0 0]] (bests [[0 0]] [0 0])))         
+    (is (= [[0 0]]       (bests [[0 1]] [0 0])))
+    (is (= [[0 1] [1 0]] (bests [[0 1]] [1 0])))
+    (is (= [[0 0]]       (bests [[0 1] [1 0]] [0 0])))))
 
 (deftest auctioning
   (is (= [3 3] (auction 5 1 4 5 7 1 0 1 2)))
