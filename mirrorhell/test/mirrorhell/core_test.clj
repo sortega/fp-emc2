@@ -41,13 +41,15 @@
                                                         :segments [[[ 4 3] [ 4 4]]
                                                                    [[ 5 3] [ 4 3]]]})
 
-(fact "Concavity test"
-      (concave-from? [[[2 2] [2 4]] [[2 2] [4 2]]] [0 0]) => falsey
-      (concave-from? [[[0 0] [0 6]] [[0 6] [10 6]]] [2 2]) => truthy)
+(fact "Corner type"
+      (corner-type [[[2 2] [2 4]] [[2 2] [4 2]]] [0 0])  => :stop
+      (corner-type [[[0 0] [0 6]] [[0 6] [10 6]]] [2 2]) => :reflect
+      (corner-type [[[2 2] [2 4]] [[2 2] [4 2]]] [0 4])  => :tangent
+      (corner-type [[[ 4 3] [ 4 4]] [[ 5 3] [ 4 3]]] [2 1]) => :stop)
 
 (fact "Reflect in a wall and come back"
       (reflect 4 (make-ray [1 1] [2 1]) sq-room) => truthy)
 (fact "Reflect in a corner and come back"
       (reflect 4 (make-ray [1 1] [2 2]) sq-room) => truthy)
-(fact "Reflect in a corner and die"
+(fact "Die in a corner"
       (reflect 1000 (make-ray [2 1] [3 2]) column-room) => falsey)

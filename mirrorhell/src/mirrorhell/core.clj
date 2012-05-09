@@ -93,13 +93,19 @@
 
 (defn rot90 [[x y]] [(- y) x])
 
-(defn concave-from? [segments p]
-  (let [{[[a _]] 2 [[b _] [c _]] 1} (group-by second (frequencies (apply concat segments)))]
+(defn corner-type [segments p]
+  (let [{[[a _]] 2 [[b _] [c _]] 1} (->> segments
+                                      (apply concat)
+                                      frequencies
+                                      (group-by second))]
     (loop [ab (dir-vector a b)
            ac (dir-vector a c)
            ap (dir-vector a p)]
       (if (not-any? neg? (flatten [ab ac]))
-        (not-any? neg? ap)
+        (cond
+          (not-any? neg? ap) :reflect
+          (not-any? pos? ap) :stop
+          :else              :tangent)
         (recur (rot90 ab) (rot90 ac) (rot90 ap))))))
 
 (defn make-ray 
@@ -113,21 +119,30 @@
                    d (vec orig) (vec dir) (:center room)))
   (let [dir        (dir-vector orig dir)
         {:keys [reflex segments cut]} (raytrace ray room)]
-    (if reflex reflex
-      (let [rest-d       (- d (dist orig cut))
-            advanced-ray (make-ray cut (map + cut dir))]
-        (case (count segments)
-          1  (recur rest-d advanced-ray (mirror (first segments) room))
-          2  (when (concave-from? segments orig)
-               (recur rest-d advanced-ray
-                      (->> room
-                        (mirror (first segments))
-                        (mirror (second segments)))))
-          )))))
+    (cond 
+      (<= d 0) nil
+
+      (and reflex (<= (dist orig reflex) d)) reflex
+
+      :else (let [rest-d       (- d (dist orig cut))
+                  advanced-ray (make-ray cut (map + cut dir))]
+              (case (count segments)
+                1  (recur rest-d advanced-ray (mirror (first segments) room))
+                2  (case (corner-type segments orig)
+                     :reflect (recur rest-d advanced-ray
+                                     (->> room
+                                       (mirror (first segments))
+                                       (mirror (second segments))))
+                     :tangent (recur rest-d advanced-ray room)
+                     :stop    nil)
+                4  (recur rest-d advanced-ray room))))))
 
 (defn reflexes [d {:keys [center] :as room}]
   (set
-    (filter (fn [dir] (reflect d [center dir] room)) 
+    (filter (fn [dir] 
+              (try
+                (reflect d (make-ray center dir) room)
+                (catch Exception _ false))) 
             (directions d))))
 
 ;; test data
